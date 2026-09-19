@@ -1,0 +1,11 @@
+// use prisma-next
+
+model Kitap {
+  id          Int      @id @default(autoincrement())
+  ad          String
+  yazar       String
+  tur         String
+  ozet        String?  
+  stok_sayisi Int      @default(1)
+  eklenme     TimestamptzString @default(now())
+}
