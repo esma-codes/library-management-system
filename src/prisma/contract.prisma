@@ -1,11 +1,245 @@
-// use prisma-next
+// use prisma-8
 
-model Kitap {
-  id          Int      @id @default(autoincrement())
-  ad          String
-  yazar       String
-  tur         String
-  ozet        String?  
-  stok_sayisi Int      @default(1)
-  eklenme     TimestamptzString @default(now())
+// ============================================================
+// 1. KULLANICI
+// ============================================================
+
+model User {
+  id           Uuid     @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  displayName  String?
+  bio          String?
+  avatarUrl    String?
+  targetBooks  Int      @default(50)
+
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+
+  followers    Follow[]   @relation("UserFollowers")
+  following    Follow[]   @relation("UserFollowing")
+  userBooks    UserBook[]
+  posts        Post[]
+  reviews      Review[]
+  likes        PostLike[]
+  comments     Comment[]
+}
+
+
+// ============================================================
+// 2. TAKİP SİSTEMİ
+// ============================================================
+
+model Follow {
+  id          Uuid              @id @default(uuid())
+  followerId  Uuid
+  followingId Uuid
+  createdAt   TimestamptzString @default(now())
+
+  follower    User @relation(
+    "UserFollowing",
+    fields: [followerId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  following   User @relation(
+    "UserFollowers",
+    fields: [followingId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([followerId, followingId])
+}
+
+
+// ============================================================
+// 3. KİTAP KATALOĞU
+// ============================================================
+
+model Book {
+  id            Uuid     @id @default(uuid())
+  googleBooksId String?  @unique
+
+  title         String
+  description   String?
+  coverUrl      String?
+  pageCount     Int?
+  language      String?
+  publishedAt   String?
+
+  createdAt     TimestamptzString @default(now())
+  updatedAt     temporal.updatedAtString()
+
+  userBooks     UserBook[]
+  posts         Post[]
+  reviews       Review[]
+}
+
+
+// ============================================================
+// 4. KULLANICININ KİTAPLIĞI / RAFLARI
+// ============================================================
+
+model UserBook {
+  id          Uuid          @id @default(uuid())
+  userId      Uuid
+  bookId      Uuid
+
+  status      ReadingStatus @default(WANT_TO_READ)
+
+  // Kullanıcının kitaba verdiği 1-10 puan.
+  // Review yazmak zorunlu değildir.
+  rating      Int?
+
+  startedAt   TimestamptzString?
+  completedAt TimestamptzString?
+
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  user        User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  book        Book @relation(
+    fields: [bookId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([userId, bookId])
+}
+
+
+// ============================================================
+// OKUMA DURUMLARI
+// ============================================================
+
+enum ReadingStatus {
+  READING
+  COMPLETED
+  WANT_TO_READ
+  DROPPED
+}
+
+
+// ============================================================
+// 5. SOSYAL AKIŞ GÖNDERİLERİ
+// ============================================================
+
+model Post {
+  id        Uuid     @id @default(uuid())
+  userId    Uuid
+  bookId    Uuid?
+
+  content   String
+  isQuote   Boolean  @default(false)
+
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  user      User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  book      Book? @relation(
+    fields: [bookId],
+    references: [id],
+    onDelete: SetNull
+  )
+
+  likes     PostLike[]
+  comments  Comment[]
+}
+
+
+// ============================================================
+// 6. GÖNDERİ BEĞENİLERİ
+// ============================================================
+
+model PostLike {
+  id        Uuid              @id @default(uuid())
+  userId    Uuid
+  postId    Uuid
+  createdAt TimestamptzString @default(now())
+
+  user      User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  post      Post @relation(
+    fields: [postId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([userId, postId])
+}
+
+
+// ============================================================
+// 7. GÖNDERİ YORUMLARI
+// ============================================================
+
+model Comment {
+  id        Uuid     @id @default(uuid())
+  userId    Uuid
+  postId    Uuid
+
+  content   String
+
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  user      User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  post      Post @relation(
+    fields: [postId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+
+// ============================================================
+// 8. DETAYLI KİTAP İNCELEMELERİ
+// ============================================================
+
+model Review {
+  id        Uuid     @id @default(uuid())
+  userId    Uuid
+  bookId    Uuid
+
+  content   String
+  isSpoiler Boolean  @default(false)
+
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  user      User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  book      Book @relation(
+    fields: [bookId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([userId, bookId])
 }

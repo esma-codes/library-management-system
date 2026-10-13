@@ -1,0 +1,58 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.kitap",
+    "label": "Create table \"kitap\"",
+    "summary": "Creates table \"kitap\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "kitap"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"kitap\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"kitap\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"kitap\"",
+        "sql": "CREATE TABLE \"public\".\"kitap\" (\n  \"ad\" text NOT NULL,\n  \"eklenme\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"ozet\" text,\n  \"stok_sayisi\" int4 DEFAULT 1 NOT NULL,\n  \"tur\" text NOT NULL,\n  \"yazar\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"kitap\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"kitap\""
+        ]
+      }
+    ]
+  }
+]
